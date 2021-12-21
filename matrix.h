@@ -16,6 +16,7 @@ enum matrix_code {
 	MATRIX_MALFORMED_JSON,
 	MATRIX_INVALID_ARGUMENT,
 	MATRIX_NOT_LOGGED_IN,
+	MATRIX_CODE_MAX
 };
 
 struct matrix;
@@ -307,6 +308,15 @@ matrix_event_ephemeral_parse(
 
 /* MISC */
 
+/* mxid/homeserver must not be modified. */
+int
+matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver);
+/* Change MXID/Homesever before logging in. */
+int
+matrix_set_mxid_homeserver(struct matrix *matrix, const char *mxid, const char *homeserver);
+
+const char *
+matrix_strerror(enum matrix_code code);
 /* size is length of buf. If 0, size is calculated automatically. */
 matrix_json_t *
 matrix_json_parse(const char *buf, size_t size);

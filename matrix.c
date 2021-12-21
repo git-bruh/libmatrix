@@ -1,5 +1,16 @@
 #include "matrix-priv.h"
 
+static const char *errors[MATRIX_CODE_MAX] = {
+	[MATRIX_SUCCESS] = "No Error",
+	[MATRIX_NOMEM] = "Out Of Memory",
+	/* TODO more descriptive codes based on response. */
+	[MATRIX_CURL_FAILURE] = "Request Failed",
+	[MATRIX_BACKED_OFF] = "Backed Off",
+	[MATRIX_MALFORMED_JSON] = "Malformed JSON",
+	[MATRIX_INVALID_ARGUMENT] = "Invalid Argument",
+	[MATRIX_NOT_LOGGED_IN] = "Not Logged In",
+};
+
 int
 matrix_global_init(void) {
 	return (curl_global_init(CURL_GLOBAL_DEFAULT)) == CURLE_OK ? 0 : -1;
@@ -21,10 +32,8 @@ matrix_alloc(const char *mxid, const char *homeserver, void *userp) {
 	if (matrix) {
 		*matrix = (struct matrix) {.ll_mutex = PTHREAD_MUTEX_INITIALIZER,
 		  .transfers = matrix_ll_alloc(NULL),
-		  .homeserver = strdup(homeserver),
-		  .mxid = strdup(mxid),
 		  .userp = userp};
-		if (matrix->homeserver && matrix->mxid && matrix->transfers) {
+		if (matrix->transfers && (matrix_set_mxid_homeserver(matrix, mxid, homeserver)) == 0) {
 			return matrix;
 		}
 	}
@@ -56,9 +65,55 @@ matrix_global_cleanup(void) {
 	curl_global_cleanup();
 }
 
-void *
-matrix_userdata(struct matrix *matrix) {
-	return matrix->userp;
+int
+matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver) {
+	if (matrix && mxid && homeserver) {
+		*mxid = matrix->mxid;
+		*homeserver = matrix->homeserver;
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int
+matrix_set_mxid_homeserver(struct matrix *matrix, const char *mxid, const char *homeserver) {
+	/* Ensure we haven't logged in. */
+	if (matrix && !matrix->access_token && mxid && homeserver) {
+		size_t len_mxid = strlen(mxid);
+
+		if (len_mxid < 1 || len_mxid > MATRIX_MXID_MAX || (strnlen(homeserver, 1)) < 1) {
+			return -1;
+		}
+
+		char *tmp_mxid = strdup(mxid);
+		char *tmp_homeserver = strdup(homeserver);
+
+		if (tmp_mxid && tmp_homeserver) {
+			free(matrix->mxid);
+			free(matrix->homeserver);
+
+			matrix->mxid = tmp_mxid;
+			matrix->homeserver = tmp_homeserver;
+
+			return 0;
+		}
+
+		free(tmp_mxid);
+		free(tmp_homeserver);
+	}
+
+	return -1;
+}
+
+const char *
+matrix_strerror(enum matrix_code code) {
+	if (code < 0 || code >= MATRIX_CODE_MAX) {
+		return "";
+	}
+
+	return errors[code];
 }
 
 matrix_json_t *
