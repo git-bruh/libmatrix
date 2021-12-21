@@ -330,6 +330,10 @@ set_batch(char *url, char **new_url, size_t *new_len, const char *next_batch) {
 
 void
 matrix_cancel(struct matrix *matrix) {
+	if (!matrix) {
+		return;
+	}
+
 	matrix->cancelled = true;
 
 	pthread_mutex_lock(&matrix->ll_mutex);
