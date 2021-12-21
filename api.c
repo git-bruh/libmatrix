@@ -344,8 +344,8 @@ matrix_cancel(struct matrix *matrix) {
 	pthread_mutex_unlock(&matrix->ll_mutex);
 }
 
-enum matrix_code
-matrix_sync_forever(struct matrix *matrix, const char *next_batch,
+static enum matrix_code
+matrix_sync_maybe_forever(struct matrix *matrix, bool once, const char *next_batch,
   unsigned timeout, struct matrix_sync_callbacks callbacks) {
 	if (!matrix || !callbacks.sync_cb) {
 		return MATRIX_INVALID_ARGUMENT;
@@ -435,6 +435,10 @@ matrix_sync_forever(struct matrix *matrix, const char *next_batch,
 
 			matrix_dispatch_sync(matrix, &callbacks, parsed);
 			cJSON_Delete(parsed);
+
+			if (once) {
+				break;
+			}
 		}
 
 		lock_and_remove(matrix, node);
@@ -445,6 +449,17 @@ matrix_sync_forever(struct matrix *matrix, const char *next_batch,
 	free(new_buf);
 
 	return code;
+}
+
+enum matrix_code
+matrix_sync_forever(struct matrix *matrix, const char *next_batch,
+  unsigned timeout, struct matrix_sync_callbacks callbacks) {
+	return matrix_sync_maybe_forever(matrix, false, next_batch, timeout, callbacks);
+}
+
+enum matrix_code
+matrix_sync_once(struct matrix *matrix, const char *next_batch, struct matrix_sync_callbacks callbacks) {
+		return matrix_sync_maybe_forever(matrix, true, next_batch, 0, callbacks);
 }
 
 enum matrix_code
