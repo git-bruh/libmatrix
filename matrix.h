@@ -308,6 +308,9 @@ matrix_event_ephemeral_parse(
 
 /* MISC */
 
+/* No transfers should be running. */
+int
+matrix_logout(struct matrix *matrix);
 /* mxid/homeserver must not be modified. */
 int
 matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver);

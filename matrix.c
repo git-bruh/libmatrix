@@ -66,6 +66,24 @@ matrix_global_cleanup(void) {
 }
 
 int
+matrix_logout(struct matrix *matrix) {
+	if (matrix) {
+		pthread_mutex_lock(&matrix->ll_mutex);
+		bool transfers_running = !!matrix->transfers->tail;
+		pthread_mutex_unlock(&matrix->ll_mutex);
+
+		if (!transfers_running) {
+			free(matrix->access_token);
+			matrix->access_token = NULL;
+
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+int
 matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver) {
 	if (matrix && mxid && homeserver) {
 		*mxid = matrix->mxid;

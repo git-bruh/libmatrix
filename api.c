@@ -194,14 +194,12 @@ response_perform(struct matrix *matrix, struct response *response) {
 
 		/* We must check this here before polling to avoid wasting timeout_multi
 		 * ms polling for nothing. */
-		if (!still_running) {
+		if (code != CURLM_OK || !still_running) {
 			break;
 		}
 
-		if (code == CURLM_OK) {
-			curl_multi_poll(
-			  response->transfer.multi, NULL, 0, timeout_multi, &nfds);
-		}
+		curl_multi_poll(response->transfer.multi, NULL, 0,
+			timeout_multi, &nfds);
 	}
 
 	if (code == CURLM_OK) {
@@ -550,6 +548,10 @@ matrix_send_message(struct matrix *matrix, char **event_id, const char *room_id,
 		cJSON *parsed = cJSON_Parse(response.data);
 		*event_id = matrix_strdup(GETSTR(parsed, "event_id"));
 		cJSON_Delete(parsed);
+
+		if (!*event_id) {
+			code = MATRIX_MALFORMED_JSON;
+		}
 	}
 
 	free(endpoint);
