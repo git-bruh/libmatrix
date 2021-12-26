@@ -279,8 +279,6 @@ matrix_login(struct matrix *matrix, const char *password, const char *device_id,
 enum matrix_code
 matrix_sync_forever(struct matrix *matrix, const char *next_batch,
   unsigned timeout, struct matrix_sync_callbacks callbacks);
-enum matrix_code
-matrix_sync_once(struct matrix *matrix, const char *next_batch, struct matrix_sync_callbacks callbacks);
 
 /* Fill in the passed struct with the current room. */
 int
