@@ -1,6 +1,11 @@
 #include "matrix-priv.h"
 
 #include <poll.h>
+#include <inttypes.h>
+#include <time.h>
+
+/* ms_since_epoch + "_" + constantly_increasing_number */
+#define TXN_FMT "%"PRIu64"_%"PRIu64
 
 enum method { GET = 0, POST, PUT };
 
@@ -290,10 +295,23 @@ response_restart(struct response *response) {
 		   : MATRIX_CURL_FAILURE;
 }
 
-static unsigned
+static uint64_t
+ms_since_epoch() {
+	struct timespec time = {0};
+	clock_gettime(CLOCK_REALTIME, &time);
+
+	uint64_t sec = (uint64_t) time.tv_sec;
+	uint64_t nsec = (uint64_t) time.tv_nsec;
+
+	const uint64_t ms_in_sec = 1000;
+	const uint64_t ns_in_ms = 1000000;
+
+	return ((sec * ms_in_sec) + (nsec / ns_in_ms));
+}
+
+static uint64_t
 txn_id(struct matrix *matrix) {
 	assert(matrix);
-
 	return ++matrix->txn_id;
 }
 
@@ -524,8 +542,7 @@ matrix_send_message(struct matrix *matrix, char **event_id, const char *room_id,
 
 	struct response response = {0};
 
-	if ((asprintf(&endpoint, "/rooms/%s/send/%s/%u", room_id, "m.room.message",
-		  txn_id(matrix)))
+	if ((asprintf(&endpoint, "/rooms/%s/send/%s/"TXN_FMT, room_id, "m.room.message", ms_since_epoch(), txn_id(matrix)))
 		  != -1
 		&& (json = cJSON_CreateObject()) && (ADDVARSTR(json, body))
 		&& (ADDVARSTR(json, format)) && (ADDVARSTR(json, formatted_body))

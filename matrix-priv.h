@@ -36,7 +36,7 @@ struct ll {
 
 struct matrix {
 	_Atomic bool cancelled;
-	_Atomic unsigned txn_id;
+	_Atomic uint64_t txn_id;
 	pthread_mutex_t ll_mutex;
 	struct ll *transfers;
 	char *access_token;
