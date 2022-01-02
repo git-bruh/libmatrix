@@ -397,6 +397,24 @@ matrix_sync_event_next(
 	return -1;
 }
 
+const char *
+matrix_sync_event_id(struct matrix_sync_event *event) {
+	if (!event) {
+		return NULL;
+	}
+
+	switch (event->type) {
+	case MATRIX_EVENT_STATE:
+		return event->state.base.event_id;
+	case MATRIX_EVENT_TIMELINE:
+		return event->timeline.base.event_id;
+	case MATRIX_EVENT_EPHEMERAL:
+		return NULL;
+	default:
+		return NULL;
+	}
+}
+
 int
 matrix_dispatch_sync(struct matrix *matrix,
   const struct matrix_sync_callbacks *callbacks, const cJSON *sync) {

@@ -303,6 +303,8 @@ matrix_event_timeline_parse(
 int
 matrix_event_ephemeral_parse(
   struct matrix_ephemeral_event *revent, const matrix_json_t *event);
+const char *
+matrix_sync_event_id(struct matrix_sync_event *event);
 
 /* MISC */
 
