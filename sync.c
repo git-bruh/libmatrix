@@ -166,7 +166,7 @@ matrix_event_state_parse(
 		  .displayname = GETSTR(content, "displayname"),
 		};
 
-		is_valid = !!revent->state_key && !!revent->member.membership;
+		is_valid = !!revent->state_key && !!revent->member.membership && ((strnlen(revent->state_key, 1)) > 0);
 	} else if (TYPE(MATRIX_ROOM_POWER_LEVELS, "m.room.power_levels")) {
 		const int default_power = 50;
 
@@ -233,11 +233,7 @@ matrix_event_state_parse(
 		is_valid = false;
 	}
 
-	if (is_valid) {
-		return 0;
-	}
-
-	return -1;
+	return is_valid ? 0 : -1;
 }
 
 int
@@ -304,11 +300,7 @@ matrix_event_timeline_parse(
 		is_valid = !!revent->redaction.redacts;
 	}
 
-	if (is_valid) {
-		return 0;
-	}
-
-	return -1;
+	return is_valid ? 0 : -1;
 }
 
 int
@@ -339,11 +331,7 @@ matrix_event_ephemeral_parse(
 		is_valid = !!revent->typing.user_ids;
 	}
 
-	if (is_valid) {
-		return 0;
-	}
-
-	return -1;
+	return is_valid ? 0 : -1;
 }
 
 #undef TYPE
@@ -359,9 +347,10 @@ matrix_sync_event_next(
 		bool done = false;
 
 		matrix_json_t **json = &room->events[revent->type];
-		revent->json = *json;
 
 		while (!done && *json) {
+			revent->json = *json;
+
 			switch (revent->type) {
 			case MATRIX_EVENT_STATE:
 				done = ((matrix_event_state_parse(&revent->state, *json)) == 0);
@@ -382,7 +371,7 @@ matrix_sync_event_next(
 				  = ((matrix_event_ephemeral_parse(&revent->ephemeral, *json))
 					 == 0);
 				break;
-			case MATRIX_EVENT_MAX:
+			default:
 				assert(0);
 			}
 
