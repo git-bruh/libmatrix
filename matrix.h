@@ -61,9 +61,14 @@ struct matrix_room_canonical_alias {
 struct matrix_room_create {
 	bool federate;
 	char *creator;
+	struct {
+		char *event_id; /* nullable. */
+		char *room_id; /* nullable. */
+	} predecessor;
 	const char
 	  *room_version; /* This is marked const as we assign a string literal to
 						it if the room_version key is not present. */
+	char *type; /* nullable. */
 };
 
 struct matrix_room_join_rules {
@@ -102,6 +107,17 @@ struct matrix_room_topic {
 struct matrix_room_avatar {
 	char *url;
 	struct matrix_file_info info;
+};
+
+struct matrix_room_space_child {
+	bool suggested;
+	char *order; /* nullable. */
+	matrix_json_t *via; /* nullable. */
+};
+
+struct matrix_room_space_parent {
+	bool canonical;
+	matrix_json_t *via; /* nullable. */
 };
 
 struct matrix_unknown_state {
@@ -181,6 +197,8 @@ struct matrix_state_event {
 		MATRIX_ROOM_NAME,
 		MATRIX_ROOM_TOPIC,
 		MATRIX_ROOM_AVATAR,
+		MATRIX_ROOM_SPACE_CHILD,
+		MATRIX_ROOM_SPACE_PARENT,
 		MATRIX_ROOM_UNKNOWN_STATE,
 	} type;
 	struct matrix_state_base base;
@@ -194,6 +212,8 @@ struct matrix_state_event {
 		struct matrix_room_name name;
 		struct matrix_room_topic topic;
 		struct matrix_room_avatar avatar;
+		struct matrix_room_space_child space_child;
+		struct matrix_room_space_parent space_parent;
 		struct matrix_unknown_state unknown_state;
 	};
 };

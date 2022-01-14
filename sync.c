@@ -156,6 +156,7 @@ matrix_event_state_parse(
 		return -1;
 	}
 
+	/* TODO hashmap for event types. */
 	if (TYPE(MATRIX_ROOM_MEMBER, "m.room.member")) {
 		revent->member = (struct matrix_room_member) {
 		  .is_direct = cJSON_IsTrue(cJSON_GetObjectItem(content, "is_direct")),
@@ -190,6 +191,8 @@ matrix_event_state_parse(
 		};
 	} else if (TYPE(MATRIX_ROOM_CREATE, "m.room.create")) {
 		cJSON *federate = cJSON_GetObjectItem(content, "federate");
+		cJSON *predecessor = cJSON_GetObjectItem(content, "predecessor");
+
 		const char *version = GETSTR(content, "room_version");
 
 		if (!version) {
@@ -201,7 +204,12 @@ matrix_event_state_parse(
 							   : true, /* Federation is enabled if the key
 										  doesn't exist. */
 		  .creator = GETSTR(content, "creator"),
+		  .predecessor = {
+			.event_id = GETSTR(predecessor, "event_id"),
+			.room_id = GETSTR(predecessor, "room_id"),
+		  },
 		  .room_version = version,
+		  .type = GETSTR(content, "type"),
 		};
 	} else if (TYPE(MATRIX_ROOM_JOIN_RULES, "m.room.join_rules")) {
 		revent->join_rules = (struct matrix_room_join_rules) {
@@ -228,6 +236,29 @@ matrix_event_state_parse(
 			  .mimetype = GETSTR(info, "mimetype"),
 			},
 		};
+	} else if (TYPE(MATRIX_ROOM_SPACE_CHILD, "m.space.child")) {
+		revent->space_child = (struct matrix_room_space_child) {
+			.suggested = cJSON_IsTrue(cJSON_GetObjectItem(content, "suggested")),
+			.order = GETSTR(content, "order"),
+			.via = cJSON_GetObjectItem(content, "via"),
+		};
+
+		if (!(cJSON_IsArray(revent->space_child.via))) {
+			revent->space_child.via = NULL;
+		}
+
+		is_valid = !!revent->state_key && revent->state_key[0] == '!';
+	} else if (TYPE(MATRIX_ROOM_SPACE_PARENT, "m.space.parent")) {
+		revent->space_parent = (struct matrix_room_space_parent) {
+			.canonical = cJSON_IsTrue(cJSON_GetObjectItem(content, "canonical")),
+			.via = cJSON_GetObjectItem(content, "via"),
+		};
+
+		if (!(cJSON_IsArray(revent->space_parent.via))) {
+			revent->space_parent.via = NULL;
+		}
+
+		is_valid = !!revent->state_key && revent->state_key[0] == '!';
 	} else {
 		/* TODO unknown */
 		is_valid = false;
