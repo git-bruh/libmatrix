@@ -38,15 +38,11 @@ cc = meson.get_compiler('c')
 libcurl = cc.find_library('libcurl')
 
 cjson = subproject('cjson')
-libcjson = cjson.get_variable('libcjson')
-
-# libcjson = cc.find_library('libcjson')
+libcjson = cjson.get_variable('libcjson_dep')
 
 static_library('matrix', 
   src, 
   c_args: c_args,
-  dependencies: [libcurl],
+  dependencies: [libcurl, libcjson],
   link_args: ['-lpthread'],
-  link_with: [libcjson]
-
 )
