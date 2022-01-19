@@ -1,3 +1,4 @@
-build
-subprojects/cJSON-*
-subprojects/packagecache/
+build/
+output/
+subprojects/*
+!subprojects/*.wrap
