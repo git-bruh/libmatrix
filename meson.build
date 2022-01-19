@@ -34,19 +34,22 @@ c_args = [
 
 cc = meson.get_compiler('c')
 
-libcurl = dependency('libcurl', required: true, version: '>= 7.68.0')
-libcjson = dependency('cjson', required: false, version: '>= 1.7.13')
+libcurl_dep = dependency('libcurl', required: true, version: '>= 7.68.0')
+libcjson_dep = dependency('cjson', required: false, version: '>= 1.7.13')
 
-if not libcjson.found()
-  cjson_project = subproject('cjson')
-  libcjson = cjson_project.get_variable('libcjson_dep')
+if not libcjson_dep.found()
+  libcjson_proj = subproject('cjson', default_options: 'tests=false')
+  libcjson_dep = libcjson_proj.get_variable('libcjson_dep')
 endif
 
-matrix = static_library('matrix', 
+incdir = include_directories('include')
+
+libmatrix = static_library('matrix',
   src, 
   c_args: c_args,
-  dependencies: [libcurl, libcjson],
+  dependencies: [libcurl_dep, libcjson_dep],
+  include_directories: incdir,
   link_args: ['-lpthread'],
 )
 
-matrix_dep = declare_dependency(include_directories: ['./'], link_with: [matrix])
+libmatrix_dep = declare_dependency(include_directories: incdir, link_with: libmatrix)
