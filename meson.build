@@ -33,13 +33,20 @@ c_args = [
   '-Werror=incompatible-pointer-types'
 ]
 
+
 cc = meson.get_compiler('c')
 libcurl = cc.find_library('libcurl')
-libcjson = cc.find_library('libcjson')
+
+cjson = subproject('cjson')
+libcjson = cjson.get_variable('libcjson')
+
+# libcjson = cc.find_library('libcjson')
 
 static_library('matrix', 
   src, 
   c_args: c_args,
-  dependencies: [libcurl, libcjson],
-  link_args: ['-lpthread'] 
+  dependencies: [libcurl],
+  link_args: ['-lpthread'],
+  link_with: [libcjson]
+
 )
