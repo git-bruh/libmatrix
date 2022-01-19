@@ -33,8 +33,9 @@ c_args = [
   '-Werror=incompatible-pointer-types'
 ]
 
-libcurl = dependency('libcurl', method: 'pkg-config')
-libcjson = dependency('libcjson', method: 'pkg-config')
+cc = meson.get_compiler('c')
+libcurl = cc.find_library('libcurl')
+libcjson = cc.find_library('libcjson')
 
 static_library('matrix', 
   src, 
