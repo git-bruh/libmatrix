@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install deps
-        run: sudo apt-get install -y python3-pip ninja-build libcurl4-openssl-dev libssl-dev libcjson-dev 
+        run: sudo apt-get install -y python3-pip ninja-build libcurl4-openssl-dev libssl-dev 
       - name: Install GCC11
         shell: bash
         run:  |
