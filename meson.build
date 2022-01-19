@@ -15,7 +15,6 @@ c_args = [
   '-flto',
   '-fstack-protector-strong',
   '--param=ssp-buffer-size=4',
-
   '-Wall',
   '-Wextra',
   '-Wpedantic',
@@ -33,12 +32,15 @@ c_args = [
   '-Werror=incompatible-pointer-types'
 ]
 
-
 cc = meson.get_compiler('c')
-libcurl = cc.find_library('libcurl')
 
-cjson = subproject('cjson')
-libcjson = cjson.get_variable('libcjson_dep')
+libcurl = dependency('libcurl', required: true, version: '>= 7.68.0')
+libcjson = dependency('cjson', required: false, version: '>= 1.7.13')
+
+if not libcjson.found()
+  cjson_project = subproject('cjson')
+  libcjson = cjson_project.get_variable('libcjson_dep')
+endif
 
 matrix = static_library('matrix', 
   src, 
