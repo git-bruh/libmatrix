@@ -40,9 +40,11 @@ libcurl = cc.find_library('libcurl')
 cjson = subproject('cjson')
 libcjson = cjson.get_variable('libcjson_dep')
 
-static_library('matrix', 
+matrix = static_library('matrix', 
   src, 
   c_args: c_args,
   dependencies: [libcurl, libcjson],
   link_args: ['-lpthread'],
 )
+
+matrix_dep = declare_dependency(include_directories: ['./'], link_with: [matrix])
