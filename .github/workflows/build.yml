@@ -5,13 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install deps
-        run: sudo apt-get install -y python3-pip ninja-build libcurl4-openssl-dev libssl-dev 
-      - name: Install GCC11
-        shell: bash
-        run:  |
-          sudo apt update
-          sudo apt install gcc-11 g++-11
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11 --slave /usr/bin/gcov gcov /usr/bin/gcov-11
+        run: sudo apt-get install -y python3-pip ninja-build libcurl4-openssl-dev libssl-dev build-essential
       - uses: actions/checkout@v2
       - name: Build libmatrix
         run: |
