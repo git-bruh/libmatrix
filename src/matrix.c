@@ -1,14 +1,14 @@
 #include "matrix-priv.h"
 
 static const char *errors[MATRIX_CODE_MAX] = {
-	[MATRIX_SUCCESS] = "No Error",
-	[MATRIX_NOMEM] = "Out Of Memory",
-	/* TODO more descriptive codes based on response. */
-	[MATRIX_CURL_FAILURE] = "Request Failed",
-	[MATRIX_BACKED_OFF] = "Backed Off",
-	[MATRIX_MALFORMED_JSON] = "Malformed JSON",
-	[MATRIX_INVALID_ARGUMENT] = "Invalid Argument",
-	[MATRIX_NOT_LOGGED_IN] = "Not Logged In",
+  [MATRIX_SUCCESS] = "No Error",
+  [MATRIX_NOMEM] = "Out Of Memory",
+  /* TODO more descriptive codes based on response. */
+  [MATRIX_CURL_FAILURE] = "Request Failed",
+  [MATRIX_BACKED_OFF] = "Backed Off",
+  [MATRIX_MALFORMED_JSON] = "Malformed JSON",
+  [MATRIX_INVALID_ARGUMENT] = "Invalid Argument",
+  [MATRIX_NOT_LOGGED_IN] = "Not Logged In",
 };
 
 int
@@ -33,7 +33,8 @@ matrix_alloc(const char *mxid, const char *homeserver, void *userp) {
 		*matrix = (struct matrix) {.ll_mutex = PTHREAD_MUTEX_INITIALIZER,
 		  .transfers = matrix_ll_alloc(NULL),
 		  .userp = userp};
-		if (matrix->transfers && (matrix_set_mxid_homeserver(matrix, mxid, homeserver)) == 0) {
+		if (matrix->transfers
+			&& (matrix_set_mxid_homeserver(matrix, mxid, homeserver)) == 0) {
 			return matrix;
 		}
 	}
@@ -84,7 +85,8 @@ matrix_logout(struct matrix *matrix) {
 }
 
 int
-matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver) {
+matrix_get_mxid_homeserver(
+  struct matrix *matrix, char **mxid, char **homeserver) {
 	if (matrix && mxid && homeserver) {
 		*mxid = matrix->mxid;
 		*homeserver = matrix->homeserver;
@@ -96,12 +98,14 @@ matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver
 }
 
 int
-matrix_set_mxid_homeserver(struct matrix *matrix, const char *mxid, const char *homeserver) {
+matrix_set_mxid_homeserver(
+  struct matrix *matrix, const char *mxid, const char *homeserver) {
 	/* Ensure we haven't logged in. */
 	if (matrix && !matrix->access_token && mxid && homeserver) {
 		size_t len_mxid = strlen(mxid);
 
-		if (len_mxid < 1 || len_mxid > MATRIX_MXID_MAX || (strnlen(homeserver, 1)) < 1) {
+		if (len_mxid < 1 || len_mxid > MATRIX_MXID_MAX
+			|| (strnlen(homeserver, 1)) < 1) {
 			return -1;
 		}
 

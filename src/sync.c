@@ -167,7 +167,8 @@ matrix_event_state_parse(
 		  .displayname = GETSTR(content, "displayname"),
 		};
 
-		is_valid = !!revent->state_key && !!revent->member.membership && ((strnlen(revent->state_key, 1)) > 0);
+		is_valid = !!revent->state_key && !!revent->member.membership
+				&& ((strnlen(revent->state_key, 1)) > 0);
 	} else if (TYPE(MATRIX_ROOM_POWER_LEVELS, "m.room.power_levels")) {
 		const int default_power = 50;
 
@@ -238,9 +239,9 @@ matrix_event_state_parse(
 		};
 	} else if (TYPE(MATRIX_ROOM_SPACE_CHILD, "m.space.child")) {
 		revent->space_child = (struct matrix_room_space_child) {
-			.suggested = cJSON_IsTrue(cJSON_GetObjectItem(content, "suggested")),
-			.order = GETSTR(content, "order"),
-			.via = cJSON_GetObjectItem(content, "via"),
+		  .suggested = cJSON_IsTrue(cJSON_GetObjectItem(content, "suggested")),
+		  .order = GETSTR(content, "order"),
+		  .via = cJSON_GetObjectItem(content, "via"),
 		};
 
 		if (!(cJSON_IsArray(revent->space_child.via))) {
@@ -250,8 +251,8 @@ matrix_event_state_parse(
 		is_valid = !!revent->state_key && revent->state_key[0] == '!';
 	} else if (TYPE(MATRIX_ROOM_SPACE_PARENT, "m.space.parent")) {
 		revent->space_parent = (struct matrix_room_space_parent) {
-			.canonical = cJSON_IsTrue(cJSON_GetObjectItem(content, "canonical")),
-			.via = cJSON_GetObjectItem(content, "via"),
+		  .canonical = cJSON_IsTrue(cJSON_GetObjectItem(content, "canonical")),
+		  .via = cJSON_GetObjectItem(content, "via"),
 		};
 
 		if (!(cJSON_IsArray(revent->space_parent.via))) {

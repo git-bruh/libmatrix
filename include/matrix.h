@@ -63,12 +63,12 @@ struct matrix_room_create {
 	char *creator;
 	struct {
 		char *event_id; /* nullable. */
-		char *room_id; /* nullable. */
+		char *room_id;	/* nullable. */
 	} predecessor;
 	const char
 	  *room_version; /* This is marked const as we assign a string literal to
 						it if the room_version key is not present. */
-	char *type; /* nullable. */
+	char *type;		 /* nullable. */
 };
 
 struct matrix_room_join_rules {
@@ -111,7 +111,7 @@ struct matrix_room_avatar {
 
 struct matrix_room_space_child {
 	bool suggested;
-	char *order; /* nullable. */
+	char *order;		/* nullable. */
 	matrix_json_t *via; /* nullable. */
 };
 
@@ -333,10 +333,12 @@ int
 matrix_logout(struct matrix *matrix);
 /* mxid/homeserver must not be modified. */
 int
-matrix_get_mxid_homeserver(struct matrix *matrix, char **mxid, char **homeserver);
+matrix_get_mxid_homeserver(
+  struct matrix *matrix, char **mxid, char **homeserver);
 /* Change MXID/Homesever before logging in. */
 int
-matrix_set_mxid_homeserver(struct matrix *matrix, const char *mxid, const char *homeserver);
+matrix_set_mxid_homeserver(
+  struct matrix *matrix, const char *mxid, const char *homeserver);
 
 const char *
 matrix_strerror(enum matrix_code code);

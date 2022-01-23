@@ -1,11 +1,11 @@
 #include "matrix-priv.h"
 
-#include <poll.h>
 #include <inttypes.h>
+#include <poll.h>
 #include <time.h>
 
 /* ms_since_epoch + "_" + constantly_increasing_number */
-#define TXN_FMT "%"PRIu64"_%"PRIu64
+#define TXN_FMT "%" PRIu64 "_%" PRIu64
 
 enum method { GET = 0, POST, PUT };
 
@@ -203,8 +203,8 @@ response_perform(struct matrix *matrix, struct response *response) {
 			break;
 		}
 
-		curl_multi_poll(response->transfer.multi, NULL, 0,
-			timeout_multi, &nfds);
+		curl_multi_poll(
+		  response->transfer.multi, NULL, 0, timeout_multi, &nfds);
 	}
 
 	if (code == CURLM_OK) {
@@ -416,7 +416,8 @@ matrix_sync_forever(struct matrix *matrix, const char *next_batch,
 			if ((code = perform_sync(matrix, &response, &callbacks))
 				!= MATRIX_CURL_FAILURE) {
 				enum matrix_code restart_code = MATRIX_SUCCESS;
-				if ((restart_code = response_restart(&response)) != MATRIX_SUCCESS) {
+				if ((restart_code = response_restart(&response))
+					!= MATRIX_SUCCESS) {
 					code = restart_code;
 					break;
 				}
@@ -542,7 +543,8 @@ matrix_send_message(struct matrix *matrix, char **event_id, const char *room_id,
 
 	struct response response = {0};
 
-	if ((asprintf(&endpoint, "/rooms/%s/send/%s/"TXN_FMT, room_id, "m.room.message", ms_since_epoch(), txn_id(matrix)))
+	if ((asprintf(&endpoint, "/rooms/%s/send/%s/" TXN_FMT, room_id,
+		  "m.room.message", ms_since_epoch(), txn_id(matrix)))
 		  != -1
 		&& (json = cJSON_CreateObject()) && (ADDVARSTR(json, body))
 		&& (ADDVARSTR(json, format)) && (ADDVARSTR(json, formatted_body))
