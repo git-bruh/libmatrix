@@ -1,18 +1,26 @@
-project('libmatrix', 'c')
+project(
+    'libmatrix',
+    'c',
+    default_options: [
+        'buildtype=debugoptimized',
+        'warning_level=3',
+        'b_lto=true',
+        'c_std=c11',
+    ],
+)
 
-src = ['api.c', 'linked_list.c', 'matrix.c', 'sync.c']
+cc = meson.get_compiler('c')
+
+src = ['src/api.c', 'src/linked_list.c', 'src/matrix.c', 'src/sync.c']
 
 c_args = [
-    '-O3',
-    '-std=c11',
     '-D_GNU_SOURCE',
     '-D_FORTIFY_SOURCE=2',
-    '-flto',
     '-fstack-protector-strong',
     '--param=ssp-buffer-size=4',
-    '-Wall',
-    '-Wextra',
-    '-Wpedantic',
+]
+
+warning_c_args = [
     '-Wshadow',
     '-Wnull-dereference',
     '-Wformat=2',
@@ -27,7 +35,8 @@ c_args = [
     '-Werror=incompatible-pointer-types',
 ]
 
-cc = meson.get_compiler('c')
+add_project_arguments(c_args, language: 'c')
+add_project_arguments(cc.get_supported_arguments(warning_c_args), language: 'c')
 
 libcurl_dep = dependency('libcurl', required: true, version: '>= 7.68.0')
 libcjson_dep = dependency('cjson', required: false, version: '>= 1.7.13')
@@ -47,7 +56,6 @@ incdir = include_directories('include')
 libmatrix = static_library(
     'matrix',
     src,
-    c_args: c_args,
     dependencies: [libcurl_dep, libcjson_dep, threads_dep, m_dep],
     include_directories: incdir,
 )
