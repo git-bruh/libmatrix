@@ -1,6 +1,6 @@
 #include "matrix-priv.h"
 
-static const char *errors[MATRIX_CODE_MAX] = {
+static const char *const errors[MATRIX_CODE_MAX] = {
   [MATRIX_SUCCESS] = "No Error",
   [MATRIX_NOMEM] = "Out Of Memory",
   /* TODO more descriptive codes based on response. */

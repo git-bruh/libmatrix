@@ -430,7 +430,6 @@ matrix_sync_event_id(struct matrix_sync_event *event) {
 	case MATRIX_EVENT_TIMELINE:
 		return event->timeline.base.event_id;
 	case MATRIX_EVENT_EPHEMERAL:
-		return NULL;
 	default:
 		return NULL;
 	}
