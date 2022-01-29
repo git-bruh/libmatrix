@@ -354,7 +354,7 @@ matrix_json_parse(const char *buf, size_t size);
 char *
 matrix_json_print(matrix_json_t *json);
 /* Check if the event has a content key. */
-int
+bool
 matrix_json_has_content(const matrix_json_t *json);
 /* Clear the content key of an event if it exists. If it was called on a
  * matrix_sync_event, the event must be discarded unless you like

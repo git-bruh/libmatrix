@@ -148,10 +148,9 @@ matrix_json_print(matrix_json_t *json) {
 	return cJSON_Print(json);
 }
 
-int
+bool
 matrix_json_has_content(const matrix_json_t *json) {
-	return (cJSON_GetArraySize(cJSON_GetObjectItem(json, "content")) > 0) ? 0
-																		  : -1;
+	return (cJSON_GetArraySize(cJSON_GetObjectItem(json, "content")) > 0);
 }
 
 int
