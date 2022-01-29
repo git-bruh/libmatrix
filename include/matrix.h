@@ -23,9 +23,15 @@ struct matrix;
 
 typedef struct cJSON matrix_json_t;
 
-/* Members of all structs are non-nullable unless explicitly mentioned. */
+/* Members of all structs are non-nullable unless explicitly mentioned and the
+ * .content_was_empty member is set to false (If state).
+ * For state events, the members will be null if .content_was_empty is set
+ * to true. It might indicate a redacted state event. */
 /* The "base" members of all event structs. */
 struct matrix_state_base {
+	/* true if all fields of the actual event are invalid. The members in the
+	 * base struct (this one) are guaranteed to be valid either way. */
+	bool content_was_empty;
 	char *event_id;
 	char *sender;
 	char *type;
@@ -65,10 +71,8 @@ struct matrix_room_create {
 		char *event_id; /* nullable. */
 		char *room_id;	/* nullable. */
 	} predecessor;
-	const char
-	  *room_version; /* This is marked const as we assign a string literal to
-						it if the room_version key is not present. */
-	char *type;		 /* nullable. */
+	const char *room_version;
+	char *type; /* nullable. */
 };
 
 struct matrix_room_join_rules {
@@ -78,9 +82,8 @@ struct matrix_room_join_rules {
 struct matrix_room_member {
 	bool is_direct;
 	char *membership;
-	char *prev_membership; /* nullable. */
-	char *avatar_url;	   /* nullable. */
-	char *displayname;	   /* nullable. */
+	char *avatar_url;  /* nullable. */
+	char *displayname; /* nullable. */
 };
 
 struct matrix_room_power_levels {
@@ -347,6 +350,14 @@ matrix_json_t *
 matrix_json_parse(const char *buf, size_t size);
 char *
 matrix_json_print(matrix_json_t *json);
+/* Check if the event has a content key. */
+int
+matrix_json_has_content(const matrix_json_t *json);
+/* Clear the content key of an event if it exists. If it was called on a
+ * matrix_sync_event, the event must be discarded unless you like
+ * use-after-frees. */
+int
+matrix_json_clear_content(matrix_json_t *json);
 void
 matrix_json_delete(matrix_json_t *json);
 

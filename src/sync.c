@@ -161,8 +161,6 @@ matrix_event_state_parse(
 		revent->member = (struct matrix_room_member) {
 		  .is_direct = cJSON_IsTrue(cJSON_GetObjectItem(content, "is_direct")),
 		  .membership = GETSTR(content, "membership"),
-		  .prev_membership
-		  = GETSTR(cJSON_GetObjectItem(event, "prev_content"), "membership"),
 		  .avatar_url = GETSTR(content, "avatar_url"),
 		  .displayname = GETSTR(content, "displayname"),
 		};
@@ -261,8 +259,16 @@ matrix_event_state_parse(
 
 		is_valid = !!revent->state_key && revent->state_key[0] == '!';
 	} else {
-		/* TODO unknown */
-		is_valid = false;
+		revent->type = MATRIX_ROOM_UNKNOWN_STATE;
+		revent->unknown_state = (struct matrix_unknown_state) {
+		  .content = content,
+		  .prev_content = cJSON_GetObjectItem(event, "prev_content"),
+		};
+	}
+
+	if (!is_valid && !content) {
+		revent->base.content_was_empty = true;
+		is_valid = true;
 	}
 
 	return is_valid ? 0 : -1;
