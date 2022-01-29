@@ -124,8 +124,7 @@ struct matrix_room_space_parent {
 };
 
 struct matrix_unknown_state {
-	matrix_json_t *content;
-	matrix_json_t *prev_content; /* nullable. */
+	const matrix_json_t *content;
 };
 
 struct matrix_room_message {
@@ -190,7 +189,22 @@ struct matrix_sync_response {
 	/* struct matrix_account_data_events account_data; */
 };
 
+union matrix_state_event_content {
+	struct matrix_room_member member;
+	struct matrix_room_power_levels power_levels;
+	struct matrix_room_canonical_alias canonical_alias;
+	struct matrix_room_create create;
+	struct matrix_room_join_rules join_rules;
+	struct matrix_room_name name;
+	struct matrix_room_topic topic;
+	struct matrix_room_avatar avatar;
+	struct matrix_room_space_child space_child;
+	struct matrix_room_space_parent space_parent;
+	struct matrix_unknown_state unknown;
+};
+
 struct matrix_state_event {
+	bool prev_content_is_valid;
 	enum matrix_state_type {
 		MATRIX_ROOM_MEMBER = 0,
 		MATRIX_ROOM_POWER_LEVELS,
@@ -206,19 +220,8 @@ struct matrix_state_event {
 	} type;
 	struct matrix_state_base base;
 	char *state_key;
-	union {
-		struct matrix_room_member member;
-		struct matrix_room_power_levels power_levels;
-		struct matrix_room_canonical_alias canonical_alias;
-		struct matrix_room_create create;
-		struct matrix_room_join_rules join_rules;
-		struct matrix_room_name name;
-		struct matrix_room_topic topic;
-		struct matrix_room_avatar avatar;
-		struct matrix_room_space_child space_child;
-		struct matrix_room_space_parent space_parent;
-		struct matrix_unknown_state unknown_state;
-	};
+	union matrix_state_event_content content;
+	union matrix_state_event_content prev_content;
 };
 
 struct matrix_timeline_event {

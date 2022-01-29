@@ -126,6 +126,193 @@ cJSON_GetObjectItem(room_json, "state"), "events")
 	return -1;
 }
 
+static bool
+parse_state_member(struct matrix_room_member *revent, const cJSON *content,
+  const char *state_key) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_member) {
+	  .is_direct = cJSON_IsTrue(cJSON_GetObjectItem(content, "is_direct")),
+	  .membership = GETSTR(content, "membership"),
+	  .avatar_url = GETSTR(content, "avatar_url"),
+	  .displayname = GETSTR(content, "displayname"),
+	};
+
+	return !!state_key && !!revent->membership && ((strnlen(state_key, 1)) > 0);
+}
+
+static bool
+parse_state_power_levels(
+  struct matrix_room_power_levels *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	const int default_power = 50;
+
+	*revent = (struct matrix_room_power_levels) {
+	  .ban = get_int(content, "ban", default_power),
+	  .events_default = get_int(content, "events_default", 0), /* Exception. */
+	  .invite = get_int(content, "invite", default_power),
+	  .kick = get_int(content, "kick", default_power),
+	  .redact = get_int(content, "redact", default_power),
+	  .state_default = get_int(content, "state_default", default_power),
+	  .users_default = get_int(content, "users_default", 0), /* Exception. */
+	  .events = cJSON_GetObjectItem(content, "events"),
+	  .notifications = cJSON_GetObjectItem(content, "notifications"),
+	  .users = cJSON_GetObjectItem(content, "users"),
+	};
+
+	return true;
+}
+
+static bool
+parse_state_canonical_alias(
+  struct matrix_room_canonical_alias *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_canonical_alias) {
+	  .alias = GETSTR(content, "alias"),
+	};
+
+	return true;
+}
+
+static bool
+parse_state_create(struct matrix_room_create *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	cJSON *federate = cJSON_GetObjectItem(content, "federate");
+	cJSON *predecessor = cJSON_GetObjectItem(content, "predecessor");
+
+	const char *version = GETSTR(content, "room_version");
+
+	if (!version) {
+		version = "1";
+	}
+
+	*revent = (struct matrix_room_create) {
+		  .federate = federate ? cJSON_IsTrue(federate)
+							   : true, /* Federation is enabled if the key
+										  doesn't exist. */
+		  .creator = GETSTR(content, "creator"),
+		  .predecessor = {
+			.event_id = GETSTR(predecessor, "event_id"),
+			.room_id = GETSTR(predecessor, "room_id"),
+		  },
+		  .room_version = version,
+		  .type = GETSTR(content, "type"),
+	};
+
+	return true;
+}
+
+static bool
+parse_state_join_rules(
+  struct matrix_room_join_rules *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_join_rules) {
+	  .join_rule = GETSTR(content, "join_rule"),
+	};
+
+	return !!revent->join_rule;
+}
+
+static bool
+parse_state_name(struct matrix_room_name *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_name) {
+	  .name = GETSTR(content, "name"),
+	};
+
+	return true;
+}
+
+static bool
+parse_state_topic(struct matrix_room_topic *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_topic) {
+	  .topic = GETSTR(content, "topic"),
+	};
+
+	return true;
+}
+
+static bool
+parse_state_avatar(struct matrix_room_avatar *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	cJSON *info = cJSON_GetObjectItem(content, "info");
+
+	*revent = (struct matrix_room_avatar){
+		  .url = GETSTR(content, "url"),
+		  .info = {
+		  .size = get_int(info, "size", 0),
+		  .mimetype = GETSTR(info, "mimetype"),
+		},
+	};
+
+	return true;
+}
+
+static bool
+parse_state_space_child(struct matrix_room_space_child *revent,
+  const cJSON *content, const char *state_key) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_space_child) {
+	  .suggested = cJSON_IsTrue(cJSON_GetObjectItem(content, "suggested")),
+	  .order = GETSTR(content, "order"),
+	  .via = cJSON_GetObjectItem(content, "via"),
+	};
+
+	if (!(cJSON_IsArray(revent->via))) {
+		revent->via = NULL;
+	}
+
+	return !!state_key && state_key[0] == '!';
+}
+
+static bool
+parse_state_space_parent(struct matrix_room_space_parent *revent,
+  const cJSON *content, const char *state_key) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_room_space_parent) {
+	  .canonical = cJSON_IsTrue(cJSON_GetObjectItem(content, "canonical")),
+	  .via = cJSON_GetObjectItem(content, "via"),
+	};
+
+	if (!(cJSON_IsArray(revent->via))) {
+		revent->via = NULL;
+	}
+
+	return !!state_key && state_key[0] == '!';
+}
+
+static bool
+parse_state_unknown(struct matrix_unknown_state *revent, const cJSON *content) {
+	assert(revent);
+	assert(content);
+
+	*revent = (struct matrix_unknown_state) {
+	  .content = content,
+	};
+
+	return true;
+}
+
 /* Assign the event type and compare in the same statement to reduce chance of
  * typos. */
 #define TYPE(enumeration, string)                                              \
@@ -148,123 +335,68 @@ matrix_event_state_parse(
 	  .type = GETSTR(event, "type"),
 	};
 
-	cJSON *content = NULL;
+	cJSON *content = cJSON_GetObjectItem(event, "content");
+	cJSON *prev_content = cJSON_GetObjectItem(
+	  cJSON_GetObjectItem(event, "unsigned"), "prev_content");
 
-	if (!revent->base.origin_server_ts || !revent->base.event_id
-		|| !revent->base.sender || !revent->base.type
-		|| !(content = cJSON_GetObjectItem(event, "content"))) {
+	if (!prev_content) {
+		prev_content = cJSON_GetObjectItem(event, "prev_content");
+	}
+
+	if (!content || !revent->base.origin_server_ts || !revent->base.event_id
+		|| !revent->base.sender || !revent->base.type) {
 		return -1;
 	}
 
-	/* TODO hashmap for event types. */
+	/* Set the .content and .prev_content for a given state type. */
+#define SET_STATE(state_member)                                                \
+	do {                                                                       \
+		is_valid = parse_state_##state_member(                                 \
+		  &revent->content.state_member, content);                             \
+		revent->prev_content_is_valid                                          \
+		  = (prev_content                                                      \
+			 && parse_state_##state_member(                                    \
+			   &revent->prev_content.state_member, prev_content));             \
+	} while (0)
+
+	/* The same, but for state types that check state keys for validity. */
+#define SET_STATE_WITH_KEY(state_member)                                       \
+	do {                                                                       \
+		is_valid = parse_state_##state_member(                                 \
+		  &revent->content.state_member, content, revent->state_key);          \
+		revent->prev_content_is_valid                                          \
+		  = (prev_content                                                      \
+			 && parse_state_##state_member(&revent->prev_content.state_member, \
+			   prev_content, revent->state_key));                              \
+	} while (0)
+
 	if (TYPE(MATRIX_ROOM_MEMBER, "m.room.member")) {
-		revent->member = (struct matrix_room_member) {
-		  .is_direct = cJSON_IsTrue(cJSON_GetObjectItem(content, "is_direct")),
-		  .membership = GETSTR(content, "membership"),
-		  .avatar_url = GETSTR(content, "avatar_url"),
-		  .displayname = GETSTR(content, "displayname"),
-		};
-
-		is_valid = !!revent->state_key && !!revent->member.membership
-				&& ((strnlen(revent->state_key, 1)) > 0);
+		SET_STATE_WITH_KEY(member);
 	} else if (TYPE(MATRIX_ROOM_POWER_LEVELS, "m.room.power_levels")) {
-		const int default_power = 50;
-
-		revent->power_levels = (struct matrix_room_power_levels) {
-		  .ban = get_int(content, "ban", default_power),
-		  .events_default
-		  = get_int(content, "events_default", 0), /* Exception. */
-		  .invite = get_int(content, "invite", default_power),
-		  .kick = get_int(content, "kick", default_power),
-		  .redact = get_int(content, "redact", default_power),
-		  .state_default = get_int(content, "state_default", default_power),
-		  .users_default
-		  = get_int(content, "users_default", 0), /* Exception. */
-		  .events = cJSON_GetObjectItem(content, "events"),
-		  .notifications = cJSON_GetObjectItem(content, "notifications"),
-		  .users = cJSON_GetObjectItem(content, "users"),
-		};
+		SET_STATE(power_levels);
 	} else if (TYPE(MATRIX_ROOM_CANONICAL_ALIAS, "m.room.canonical_alias")) {
-		revent->canonical_alias = (struct matrix_room_canonical_alias) {
-		  .alias = GETSTR(content, "alias"),
-		};
+		SET_STATE(canonical_alias);
 	} else if (TYPE(MATRIX_ROOM_CREATE, "m.room.create")) {
-		cJSON *federate = cJSON_GetObjectItem(content, "federate");
-		cJSON *predecessor = cJSON_GetObjectItem(content, "predecessor");
-
-		const char *version = GETSTR(content, "room_version");
-
-		if (!version) {
-			version = "1";
-		}
-
-		revent->create = (struct matrix_room_create) {
-		  .federate = federate ? cJSON_IsTrue(federate)
-							   : true, /* Federation is enabled if the key
-										  doesn't exist. */
-		  .creator = GETSTR(content, "creator"),
-		  .predecessor = {
-			.event_id = GETSTR(predecessor, "event_id"),
-			.room_id = GETSTR(predecessor, "room_id"),
-		  },
-		  .room_version = version,
-		  .type = GETSTR(content, "type"),
-		};
+		SET_STATE(create);
 	} else if (TYPE(MATRIX_ROOM_JOIN_RULES, "m.room.join_rules")) {
-		revent->join_rules = (struct matrix_room_join_rules) {
-		  .join_rule = GETSTR(content, "join_rule"),
-		};
-
-		is_valid = !!revent->join_rules.join_rule;
+		SET_STATE(join_rules);
 	} else if (TYPE(MATRIX_ROOM_NAME, "m.room.name")) {
-		revent->name = (struct matrix_room_name) {
-		  .name = GETSTR(content, "name"),
-		};
+		SET_STATE(name);
 	} else if (TYPE(MATRIX_ROOM_TOPIC, "m.room.topic")) {
-		revent->topic = (struct matrix_room_topic) {
-		  .topic = GETSTR(content, "topic"),
-		};
+		SET_STATE(topic);
 	} else if (TYPE(MATRIX_ROOM_AVATAR, "m.room.avatar")) {
-		cJSON *info = cJSON_GetObjectItem(content, "info");
-
-		revent->avatar = (struct matrix_room_avatar){
-		  .url = GETSTR(content, "url"),
-		  .info =
-			{
-			  .size = get_int(info, "size", 0),
-			  .mimetype = GETSTR(info, "mimetype"),
-			},
-		};
+		SET_STATE(avatar);
 	} else if (TYPE(MATRIX_ROOM_SPACE_CHILD, "m.space.child")) {
-		revent->space_child = (struct matrix_room_space_child) {
-		  .suggested = cJSON_IsTrue(cJSON_GetObjectItem(content, "suggested")),
-		  .order = GETSTR(content, "order"),
-		  .via = cJSON_GetObjectItem(content, "via"),
-		};
-
-		if (!(cJSON_IsArray(revent->space_child.via))) {
-			revent->space_child.via = NULL;
-		}
-
-		is_valid = !!revent->state_key && revent->state_key[0] == '!';
+		SET_STATE_WITH_KEY(space_child);
 	} else if (TYPE(MATRIX_ROOM_SPACE_PARENT, "m.space.parent")) {
-		revent->space_parent = (struct matrix_room_space_parent) {
-		  .canonical = cJSON_IsTrue(cJSON_GetObjectItem(content, "canonical")),
-		  .via = cJSON_GetObjectItem(content, "via"),
-		};
-
-		if (!(cJSON_IsArray(revent->space_parent.via))) {
-			revent->space_parent.via = NULL;
-		}
-
-		is_valid = !!revent->state_key && revent->state_key[0] == '!';
+		SET_STATE_WITH_KEY(space_parent);
 	} else {
 		revent->type = MATRIX_ROOM_UNKNOWN_STATE;
-		revent->unknown_state = (struct matrix_unknown_state) {
-		  .content = content,
-		  .prev_content = cJSON_GetObjectItem(event, "prev_content"),
-		};
+		SET_STATE(unknown);
 	}
+
+#undef SET_STATE
+#undef SET_STATE_WITH_KEY
 
 	if (!is_valid && !content) {
 		revent->base.content_was_empty = true;
