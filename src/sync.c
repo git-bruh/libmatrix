@@ -398,7 +398,7 @@ matrix_event_state_parse(
 #undef SET_STATE
 #undef SET_STATE_WITH_KEY
 
-	if (!is_valid && !content) {
+	if (!is_valid && !matrix_json_has_content(event)) {
 		revent->base.content_was_empty = true;
 		is_valid = true;
 	}
