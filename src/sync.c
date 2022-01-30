@@ -533,6 +533,7 @@ matrix_sync_event_next(
 				if (!done
 					&& (matrix_event_state_parse(&revent->state, *json)) == 0) {
 					revent->type = MATRIX_EVENT_STATE;
+					revent->state.is_in_timeline = true;
 					done = true;
 				}
 				break;

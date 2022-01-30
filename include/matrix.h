@@ -204,6 +204,11 @@ union matrix_state_event_content {
 };
 
 struct matrix_state_event {
+	/* Whether the state event was received in the sync timeline. If true, the
+	 * state event should be shown in the client's UI along with other timeline
+	 * events. */
+	bool is_in_timeline;
+	/* Whether the member in prev_content is valid. */
 	bool prev_content_is_valid;
 	enum matrix_state_type {
 		MATRIX_ROOM_MEMBER = 0,
@@ -218,8 +223,8 @@ struct matrix_state_event {
 		MATRIX_ROOM_SPACE_PARENT,
 		MATRIX_ROOM_UNKNOWN_STATE,
 	} type;
-	struct matrix_state_base base;
 	char *state_key;
+	struct matrix_state_base base;
 	union matrix_state_event_content content;
 	union matrix_state_event_content prev_content;
 };
