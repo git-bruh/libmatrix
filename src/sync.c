@@ -343,8 +343,9 @@ matrix_event_state_parse(
 		prev_content = cJSON_GetObjectItem(event, "prev_content");
 	}
 
-	if (!content || !revent->base.origin_server_ts || !revent->base.event_id
-		|| !revent->base.sender || !revent->base.type) {
+	if (!revent->state_key || !content || !revent->base.origin_server_ts
+		|| !revent->base.event_id || !revent->base.sender
+		|| !revent->base.type) {
 		return -1;
 	}
 
@@ -505,6 +506,23 @@ matrix_event_ephemeral_parse(
 }
 
 #undef TYPE
+
+int
+matrix_event_sync_parse(
+  struct matrix_sync_event *revent, const matrix_json_t *event) {
+	if (!revent || !event) {
+		return -1;
+	}
+
+	/* State events must have a state_key */
+	if ((GETSTR(event, "state_key"))) {
+		revent->type = MATRIX_EVENT_STATE;
+		return matrix_event_state_parse(&revent->state, event);
+	}
+
+	revent->type = MATRIX_EVENT_TIMELINE;
+	return matrix_event_timeline_parse(&revent->timeline, event);
+}
 
 int
 matrix_sync_event_next(

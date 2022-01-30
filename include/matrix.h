@@ -35,7 +35,7 @@ struct matrix_state_base {
 	char *event_id;
 	char *sender;
 	char *type;
-	char *state_key; /* nullable (Or zero length). */
+	char *state_key; /* Not nullable, but can be zero-length */
 	uint64_t origin_server_ts;
 };
 
@@ -334,6 +334,12 @@ matrix_event_timeline_parse(
 int
 matrix_event_ephemeral_parse(
   struct matrix_ephemeral_event *revent, const matrix_json_t *event);
+/* Only for state/timeline events. If -1 is returned, the contents of revent
+ * will be invalid, but revent->type will be set to the most relevant type
+ * depending on whether "state_key" was present or not. */
+int
+matrix_event_sync_parse(
+  struct matrix_sync_event *revent, const matrix_json_t *event);
 const char *
 matrix_sync_event_id(struct matrix_sync_event *event);
 
