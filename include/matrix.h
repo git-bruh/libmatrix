@@ -211,17 +211,17 @@ struct matrix_state_event {
 	/* Whether the member in prev_content is valid. */
 	bool prev_content_is_valid;
 	enum matrix_state_type {
-		MATRIX_ROOM_MEMBER = 0,
-		MATRIX_ROOM_POWER_LEVELS,
-		MATRIX_ROOM_CANONICAL_ALIAS,
-		MATRIX_ROOM_CREATE,
-		MATRIX_ROOM_JOIN_RULES,
-		MATRIX_ROOM_NAME,
-		MATRIX_ROOM_TOPIC,
-		MATRIX_ROOM_AVATAR,
-		MATRIX_ROOM_SPACE_CHILD,
-		MATRIX_ROOM_SPACE_PARENT,
-		MATRIX_ROOM_UNKNOWN_STATE,
+		MATRIX_ROOM_MEMBER = 1 << 1,
+		MATRIX_ROOM_POWER_LEVELS = 1 << 2,
+		MATRIX_ROOM_CANONICAL_ALIAS = 1 << 3,
+		MATRIX_ROOM_CREATE = 1 << 4,
+		MATRIX_ROOM_JOIN_RULES = 1 << 5,
+		MATRIX_ROOM_NAME = 1 << 6,
+		MATRIX_ROOM_TOPIC = 1 << 7,
+		MATRIX_ROOM_AVATAR = 1 << 8,
+		MATRIX_ROOM_SPACE_CHILD = 1 << 9,
+		MATRIX_ROOM_SPACE_PARENT = 1 << 10,
+		MATRIX_ROOM_UNKNOWN_STATE = 1 << 11,
 	} type;
 	char *state_key;
 	struct matrix_state_base base;
@@ -231,9 +231,9 @@ struct matrix_state_event {
 
 struct matrix_timeline_event {
 	enum matrix_timeline_type {
-		MATRIX_ROOM_MESSAGE = 0,
-		MATRIX_ROOM_REDACTION,
-		MATRIX_ROOM_ATTACHMENT,
+		MATRIX_ROOM_MESSAGE = 1 << 1,
+		MATRIX_ROOM_REDACTION = 1 << 2,
+		MATRIX_ROOM_ATTACHMENT = 1 << 3,
 	} type;
 	struct matrix_room_base base;
 	union {
@@ -245,7 +245,7 @@ struct matrix_timeline_event {
 
 struct matrix_ephemeral_event {
 	enum matrix_ephemeral_type {
-		MATRIX_ROOM_TYPING = 0,
+		MATRIX_ROOM_TYPING = 1 << 1,
 	} type;
 	struct matrix_ephemeral_base base;
 	union {
