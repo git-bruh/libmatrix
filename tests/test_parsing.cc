@@ -458,7 +458,7 @@ test_join_rules(void) {
 	matrix_json_delete(jevent);
 
 #ifdef TODO
-	data = R"({
+	jevent = matrix_json_parse(R"({
 		  "type": "m.room.join_rules",
 		  "state_key": "",
 		  "sender": "@mujx:matrix.org",
@@ -477,7 +477,8 @@ test_join_rules(void) {
 				  }
 			  ]
 		  }
-	  })"_json;
+	  })",
+	  0);
 
 	ns::StateEvent<ns::state::JoinRules> event2 = data;
 	ASSERT_EQ(event2.content.allow.size(), 2);
@@ -594,10 +595,369 @@ test_avatar(void) {
 
 static void
 test_space_child(void) {
+	matrix_json_t *jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+	  "type": "m.space.child",
+	  "state_key": "!abcd:example.com",
+	  "content": {
+		  "via": ["example.com", "test.org"]
+	  }
+}
+		)",
+	  0);
+
+	struct matrix_state_event event;
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_CHILD);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!abcd:example.com");
+	TEST_ASSERT_NOT_NULL(event.content.space_child.via);
+	TEST_ASSERT_NULL(event.content.space_child.order);
+	TEST_ASSERT_FALSE(event.content.space_child.suggested);
+
+#ifdef TODO
+	std::vector<std::string> via {"example.com", "test.org"};
+	TEST_ASSERT_EQUAL(event.content.space_child.via, via);
+#endif
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"via": ["example.com"],
+		"suggested": true,
+		"order": "abcd"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_CHILD);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!efgh:example.com");
+	TEST_ASSERT_NOT_NULL(event.content.space_child.via);
+	TEST_ASSERT_EQUAL_STRING(event.content.space_child.order, "abcd");
+	TEST_ASSERT_TRUE(event.content.space_child.suggested);
+
+#ifdef TODO
+	std::vector<std::string> via2 {"example.com"};
+	TEST_ASSERT_EQUAL(event.content.space_child.via, via2);
+#endif
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!jklm:example.com",
+		"content": {}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_CHILD);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!jklm:example.com");
+	TEST_ASSERT_NULL(event.content.space_child.via);
+	TEST_ASSERT_NULL(event.content.space_child.order);
+	TEST_ASSERT_FALSE(event.content.space_child.suggested);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"via": ["example.com"],
+		"order": "01234567890123456789012345678901234567890123456789_"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_CHILD);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!efgh:example.com");
+	TEST_ASSERT_NOT_NULL(event.content.space_child.via);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"via": [],
+		"order": "01234567890123456789012345678901234567890123456789_"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+	TEST_ASSERT_NULL(event.content.space_child.via);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"via": 5,
+		"order": "01234567890123456789012345678901234567890123456789_"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_NULL(event.content.space_child.via);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"via": null,
+		"order": "01234567890123456789012345678901234567890123456789_"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL_STRING(event.content.space_child.order,
+	  "01234567890123456789012345678901234567890123456789_");
+	TEST_ASSERT_NULL(event.content.space_child.via);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		"type": "m.space.child",
+		"state_key": "!efgh:example.com",
+		"content": {
+		"order": "01234567890123456789012345678901234567890123456789_"
+	}
+}
+		)",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL_STRING(event.content.space_child.order,
+	  "01234567890123456789012345678901234567890123456789_");
+	TEST_ASSERT_NULL(event.content.space_child.via);
+
+	matrix_json_delete(jevent);
 }
 
 static void
 test_space_parent(void) {
+	matrix_json_t *jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": ["example.com"],
+			"canonical": true
+		  }
+		})",
+	  0);
+
+	struct matrix_state_event event;
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NOT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_TRUE(event.content.space_parent.canonical);
+
+#ifdef TODO
+	std::vector<std::string> via {"example.com"};
+	TEST_ASSERT_EQUAL(event.content.space_parent.via, via);
+#endif
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": ["example.org"]
+		  }
+		})",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NOT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_FALSE(event.content.space_parent.canonical);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": [],
+			"canonical": true
+		  }
+		})",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_TRUE(event.content.space_parent.canonical);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": null,
+			"canonical": false
+		  }
+		})",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_FALSE(event.content.space_parent.canonical);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": 5,
+			"canonical": true
+		  }
+		})",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_TRUE(event.content.space_parent.canonical);
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510476064445,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104760642668662QICBu:matrix.org",
+		  "type": "m.space.parent",
+		  "state_key": "!space:example.com",
+		  "content": {
+			"via": "adjsa",
+			"canonical": true
+		  }
+		})",
+	  0);
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_SPACE_PARENT);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15104760642668662QICBu:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1510476064445);
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "!space:example.com");
+	TEST_ASSERT_NULL(event.content.space_parent.via);
+	TEST_ASSERT_TRUE(event.content.space_parent.canonical);
+
+	matrix_json_delete(jevent);
 }
 
 static void
@@ -852,302 +1212,6 @@ TEST(StateEvents, Tombstone)
 	TEST_ASSERT_EQUAL(event.base.state_key, "");
 	TEST_ASSERT_EQUAL(event.content.body, "This room has been replaced");
 	TEST_ASSERT_EQUAL(event.content.replacement_room, "!newroom:example.org");
-}
-
-TEST(StateEvents, SpaceChild)
-{
-	json data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-	  "type": "m.space.child",
-	  "state_key": "!abcd:example.com",
-	  "content": {
-		  "via": ["example.com", "test.org"]
-	  }
-}
-		)"_json;
-
-	ns::StateEvent<ns::state::space::Child> event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceChild);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!abcd:example.com");
-	ASSERT_TRUE(event.content.via.has_value());
-	std::vector<std::string> via{"example.com", "test.org"};
-	TEST_ASSERT_EQUAL(event.content.via, via);
-	EXPECT_FALSE(event.content.order.has_value());
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"via": ["example.com"],
-		"order": "abcd"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceChild);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!efgh:example.com");
-	ASSERT_TRUE(event.content.via.has_value());
-	std::vector<std::string> via2{"example.com"};
-	TEST_ASSERT_EQUAL(event.content.via, via2);
-	ASSERT_TRUE(event.content.order.has_value());
-	ASSERT_EQ(event.content.order, "abcd");
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!jklm:example.com",
-		"content": {}
-}
-		)"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceChild);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!jklm:example.com");
-	ASSERT_FALSE(event.content.via.has_value());
-	ASSERT_FALSE(event.content.order.has_value());
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"via": ["example.com"],
-		"order": "01234567890123456789012345678901234567890123456789_"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceChild);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!efgh:example.com");
-	EXPECT_TRUE(event.content.via.has_value());
-	ASSERT_FALSE(event.content.order.has_value());
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"via": [],
-		"order": "01234567890123456789012345678901234567890123456789_"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	EXPECT_FALSE(event.content.via.has_value());
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"via": 5,
-		"order": "01234567890123456789012345678901234567890123456789_"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	EXPECT_FALSE(event.content.via.has_value());
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"via": null,
-		"order": "01234567890123456789012345678901234567890123456789_"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	EXPECT_FALSE(event.content.via.has_value());
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		"type": "m.space.child",
-		"state_key": "!efgh:example.com",
-		"content": {
-		"order": "01234567890123456789012345678901234567890123456789_"
-	}
-}
-		)"_json;
-
-	event = data;
-
-	EXPECT_FALSE(event.content.via.has_value());
-}
-TEST(StateEvents, SpaceParent)
-{
-	json data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": ["example.com"],
-			"canonical": true
-		  }
-		})"_json;
-
-	ns::StateEvent<ns::state::space::Parent> event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	ASSERT_TRUE(event.content.via.has_value());
-	std::vector<std::string> via{"example.com"};
-	TEST_ASSERT_EQUAL(event.content.via, via);
-	EXPECT_TRUE(event.content.canonical);
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": ["example.org"]
-		  }
-		})"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	EXPECT_TRUE(event.content.via.has_value());
-	EXPECT_FALSE(event.content.canonical);
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": [],
-			"canonical": true
-		  }
-		})"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	EXPECT_FALSE(event.content.via.has_value());
-	EXPECT_TRUE(event.content.canonical);
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": null,
-			"canonical": true
-		  }
-		})"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	EXPECT_FALSE(event.content.via.has_value());
-	EXPECT_TRUE(event.content.canonical);
-
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": 5,
-			"canonical": true
-		  }
-		})"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	EXPECT_FALSE(event.content.via.has_value());
-	EXPECT_TRUE(event.content.canonical);
-	data = R"({
-		  "origin_server_ts": 1510476064445,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104760642668662QICBu:matrix.org",
-		  "type": "m.space.parent",
-		  "state_key": "!space:example.com",
-		  "content": {
-			"via": "adjsa",
-			"canonical": true
-		  }
-		})"_json;
-
-	event = data;
-
-	TEST_ASSERT_EQUAL(event.type, SpaceParent);
-	TEST_ASSERT_EQUAL(event.base.event_id,
-"$15104760642668662QICBu:matrix.org"); TEST_ASSERT_EQUAL(event.base.sender,
-"@nheko_test:matrix.org"); TEST_ASSERT_EQUAL(event.base.origin_server_ts,
-1510476064445); TEST_ASSERT_EQUAL(event.base.state_key, "!space:example.com");
-	EXPECT_FALSE(event.content.via.has_value());
-	EXPECT_TRUE(event.content.canonical);
 }
 
 TEST(StateEvents, ImagePack)

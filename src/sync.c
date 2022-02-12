@@ -276,7 +276,8 @@ parse_state_space_child(struct matrix_room_space_child *revent,
 	  .via = cJSON_GetObjectItem(content, "via"),
 	};
 
-	if (!(cJSON_IsArray(revent->via))) {
+	if (!(cJSON_IsArray(revent->via))
+		|| (cJSON_GetArraySize(revent->via)) < 1) {
 		revent->via = NULL;
 	}
 
@@ -294,7 +295,8 @@ parse_state_space_parent(struct matrix_room_space_parent *revent,
 	  .via = cJSON_GetObjectItem(content, "via"),
 	};
 
-	if (!(cJSON_IsArray(revent->via))) {
+	if (!(cJSON_IsArray(revent->via))
+		|| (cJSON_GetArraySize(revent->via)) < 1) {
 		revent->via = NULL;
 	}
 
