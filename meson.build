@@ -1,6 +1,6 @@
 project(
     'libmatrix',
-    'c',
+    ['c', 'cpp'],
     default_options: [
         'buildtype=debugoptimized',
         'warning_level=3',
@@ -12,6 +12,8 @@ project(
 cc = meson.get_compiler('c')
 
 src = ['src/api.c', 'src/linked_list.c', 'src/matrix.c', 'src/sync.c']
+
+tests = ['test_parsing']
 
 c_args = [
     '-D_GNU_SOURCE',
@@ -64,3 +66,17 @@ libmatrix_dep = declare_dependency(
     include_directories: incdir,
     link_with: libmatrix,
 )
+
+if get_option('tests')
+    unity_proj = subproject('unity', default_options: ['werror=false'])
+    unity_dep = unity_proj.get_variable('unity_dep')
+
+    foreach test_name : tests
+        exe = executable(
+            test_name,
+            'tests/@0@.cc'.format(test_name),
+            dependencies: [libmatrix_dep, unity_dep],
+        )
+        test(test_name, exe)
+    endforeach
+endif

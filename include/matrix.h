@@ -1,5 +1,8 @@
 #ifndef MATRIX_MATRIX_H
 #define MATRIX_MATRIX_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -169,18 +172,20 @@ enum matrix_event_type {
 	MATRIX_EVENT_MAX,
 };
 
+enum matrix_room_type {
+	MATRIX_ROOM_LEAVE = 0,
+	MATRIX_ROOM_JOIN,
+	MATRIX_ROOM_INVITE,
+	MATRIX_ROOM_MAX
+};
+
 struct matrix_room {
 	char *id;
 	matrix_json_t *events[MATRIX_EVENT_MAX];
 	struct matrix_room_summary summary;
 	struct matrix_room_timeline
 	  timeline; /* Irrelevant if type == MATRIX_ROOM_INVITE. */
-	enum matrix_room_type {
-		MATRIX_ROOM_LEAVE = 0,
-		MATRIX_ROOM_JOIN,
-		MATRIX_ROOM_INVITE,
-		MATRIX_ROOM_MAX
-	} type;
+	enum matrix_room_type type;
 };
 
 struct matrix_sync_response {
@@ -203,6 +208,20 @@ union matrix_state_event_content {
 	struct matrix_unknown_state unknown;
 };
 
+enum matrix_state_type {
+	MATRIX_ROOM_MEMBER = 1 << 1,
+	MATRIX_ROOM_POWER_LEVELS = 1 << 2,
+	MATRIX_ROOM_CANONICAL_ALIAS = 1 << 3,
+	MATRIX_ROOM_CREATE = 1 << 4,
+	MATRIX_ROOM_JOIN_RULES = 1 << 5,
+	MATRIX_ROOM_NAME = 1 << 6,
+	MATRIX_ROOM_TOPIC = 1 << 7,
+	MATRIX_ROOM_AVATAR = 1 << 8,
+	MATRIX_ROOM_SPACE_CHILD = 1 << 9,
+	MATRIX_ROOM_SPACE_PARENT = 1 << 10,
+	MATRIX_ROOM_UNKNOWN_STATE = 1 << 11,
+};
+
 struct matrix_state_event {
 	/* Whether the state event was received in the sync timeline. If true, the
 	 * state event should be shown in the client's UI along with other timeline
@@ -210,32 +229,22 @@ struct matrix_state_event {
 	bool is_in_timeline;
 	/* Whether the member in prev_content is valid. */
 	bool prev_content_is_valid;
-	enum matrix_state_type {
-		MATRIX_ROOM_MEMBER = 1 << 1,
-		MATRIX_ROOM_POWER_LEVELS = 1 << 2,
-		MATRIX_ROOM_CANONICAL_ALIAS = 1 << 3,
-		MATRIX_ROOM_CREATE = 1 << 4,
-		MATRIX_ROOM_JOIN_RULES = 1 << 5,
-		MATRIX_ROOM_NAME = 1 << 6,
-		MATRIX_ROOM_TOPIC = 1 << 7,
-		MATRIX_ROOM_AVATAR = 1 << 8,
-		MATRIX_ROOM_SPACE_CHILD = 1 << 9,
-		MATRIX_ROOM_SPACE_PARENT = 1 << 10,
-		MATRIX_ROOM_UNKNOWN_STATE = 1 << 11,
-	} type;
+	enum matrix_state_type type;
 	char *state_key;
 	struct matrix_state_base base;
 	union matrix_state_event_content content;
 	union matrix_state_event_content prev_content;
 };
 
+enum matrix_rel_type {
+	MATRIX_RELATION_UNKNOWN = 0,
+	MATRIX_RELATION_ANNOTATION,
+	MATRIX_RELATION_IN_REPLY_TO,
+	MATRIX_RELATION_REPLACE,
+};
+
 struct matrix_event_relation {
-	enum matrix_rel_type {
-		MATRIX_RELATION_UNKNOWN = 0,
-		MATRIX_RELATION_ANNOTATION,
-		MATRIX_RELATION_IN_REPLY_TO,
-		MATRIX_RELATION_REPLACE,
-	} rel_type;
+	enum matrix_rel_type rel_type;
 	char *rel_type_str; /* nullable */
 	char *event_id;		/* nullable */
 	char *key;			/* nullable (Annotation key) */
@@ -243,12 +252,14 @@ struct matrix_event_relation {
 	  *new_content; /* nullable, the event struct can be passed to () */
 };
 
+enum matrix_timeline_type {
+	MATRIX_ROOM_MESSAGE = 1 << 1,
+	MATRIX_ROOM_REDACTION = 1 << 2,
+	MATRIX_ROOM_ATTACHMENT = 1 << 3,
+};
+
 struct matrix_timeline_event {
-	enum matrix_timeline_type {
-		MATRIX_ROOM_MESSAGE = 1 << 1,
-		MATRIX_ROOM_REDACTION = 1 << 2,
-		MATRIX_ROOM_ATTACHMENT = 1 << 3,
-	} type;
+	enum matrix_timeline_type type;
 	struct matrix_room_base base;
 	struct matrix_event_relation relation;
 	union {
@@ -258,10 +269,12 @@ struct matrix_timeline_event {
 	};
 };
 
+enum matrix_ephemeral_type {
+	MATRIX_ROOM_TYPING = 1 << 1,
+};
+
 struct matrix_ephemeral_event {
-	enum matrix_ephemeral_type {
-		MATRIX_ROOM_TYPING = 1 << 1,
-	} type;
+	enum matrix_ephemeral_type type;
 	struct matrix_ephemeral_base base;
 	union {
 		struct matrix_room_typing typing;
@@ -398,4 +411,7 @@ matrix_cancel(struct matrix *matrix);
 enum matrix_code
 matrix_send_message(struct matrix *matrix, char **event_id, const char *room_id,
   const char *msgtype, const char *body, const char *formatted_body);
+#ifdef __cplusplus
+}
+#endif
 #endif /* !MATRIX_MATRIX_H */
