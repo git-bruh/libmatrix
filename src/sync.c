@@ -184,7 +184,7 @@ parse_state_create(struct matrix_room_create *revent, const cJSON *content) {
 	assert(revent);
 	assert(content);
 
-	cJSON *federate = cJSON_GetObjectItem(content, "federate");
+	cJSON *federate = cJSON_GetObjectItem(content, "m.federate");
 	cJSON *predecessor = cJSON_GetObjectItem(content, "predecessor");
 
 	const char *version = GETSTR(content, "room_version");
