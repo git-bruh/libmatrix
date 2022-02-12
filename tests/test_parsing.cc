@@ -13,6 +13,9 @@ tearDown(void) {
 }
 
 static void
+test_message(void) {}
+
+static void
 test_redaction(void) {
 	matrix_json_t *jevent = matrix_json_parse(R"({
 	  "unsigned": {
@@ -36,28 +39,15 @@ test_redaction(void) {
 	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_REDACTION);
 	TEST_ASSERT_EQUAL_STRING(
 	  event.base.event_id, "$143273582443PhrSn:localhost");
-	// TEST_ASSERT_EQUAL(event.room_id, "!jEsUZKDJdhlrceRyVU:localhost");
-	// TEST_ASSERT_EQUAL(event.unsigned_data.age, 146);
 	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@example:localhost");
 	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1432735824653L);
 	TEST_ASSERT_EQUAL_STRING(
 	  event.redaction.redacts, "$1521361675759563UDexf:matrix.org");
-	// TEST_ASSERT_EQUAL(event.content.reason, "No reason");
+	TEST_ASSERT_EQUAL_STRING(event.redaction.reason, "No reason");
 
 	matrix_json_delete(jevent);
-}
 
-int
-main(void) {
-	UNITY_BEGIN();
-	RUN_TEST(test_redaction);
-	return UNITY_END();
-}
-
-/*
-TEST(Events, Redacted)
-{
-	json data = R"({
+	jevent = matrix_json_parse(R"({
 	  "unsigned": {
 			"age": 146
 	  },
@@ -69,82 +59,163 @@ TEST(Events, Redacted)
 		  "redacts": "$1521361675759563UDexf:matrix.org",
 		  "sender": "@example:localhost",
 		  "type": "m.room.redaction"
-		})"_json;
+		})",
+	  0);
 
-	mtx::events::collections::TimelineEvent event = data;
+	struct matrix_sync_event sevent;
 
-	ASSERT_TRUE(std::holds_alternative<ns::RoomEvent<ns::msg::Redacted>>(event.data));
+	TEST_ASSERT_EQUAL(0, matrix_event_sync_parse(&sevent, jevent));
 
-	json data2 = R"({
-		"content": {
-			"membership": "join"
-		},
-		"origin_server_ts": 1595256121167,
-		"sender": "@redacted_user_1:example.com",
-		"state_key": "@redacted_user_1:example.com",
-		"type": "m.room.member",
-		"unsigned": {
-			"redacted_by": "$redacted_id_1",
-			"redacted_because": {
-				"content": {},
-				"origin_server_ts": 1595261803914,
-				"redacts": "$redacted_id_2",
-				"sender": "@redacted_user_2:example.com",
-				"type": "m.room.redaction",
-				"unsigned": {
-					"age": 23764322
-				},
-				"event_id": "$redacted_id_1"
-			}
-		},
-		"event_id": "$redacted_id_2"
-	})"_json;
+	TEST_ASSERT_EQUAL(sevent.type, MATRIX_EVENT_TIMELINE);
+	TEST_ASSERT_EQUAL(sevent.timeline.type, MATRIX_ROOM_REDACTION);
 
-	event = data2;
-	ASSERT_TRUE(std::holds_alternative<ns::StateEvent<ns::state::Member>>(event.data));
-	ASSERT_TRUE(std::get<ns::StateEvent<ns::state::Member>>(event.data)
-				  .unsigned_data.redacted_because.has_value());
-	ASSERT_EQ(std::get<ns::StateEvent<ns::state::Member>>(event.data)
-				.unsigned_data.redacted_because->sender,
-			  "@redacted_user_2:example.com");
+	matrix_json_delete(jevent);
 }
 
-TEST(StateEvents, Aliases)
-{
-	json data = R"({
-	  "unsigned": {
-		"age": 242352,
-		"transaction_id": "txnid"
-	  },
-	  "content": {
-		"aliases": [
-		  "#somewhere:localhost",
-		  "#another:localhost"
-		]
-	  },
-	  "event_id": "$WLGTSEFSEF:localhost",
-	  "origin_server_ts": 1431961217939,
-		  "room_id": "!Cuyf34gef24t:localhost",
-	  "sender": "@example:localhost",
-	  "state_key": "localhost",
-	  "type": "m.room.aliases"
-	})"_json;
+static void
+test_attachment(void) {}
 
-	ns::StateEvent<ns::state::Aliases> aliases = data;
+static void
+test_member(void) {
+	matrix_json_t *jevent = matrix_json_parse(R"({
+		  "origin_server_ts": 1510473132947,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15104731322646264oUPqj:matrix.org",
+		  "unsigned": {
+			"age": 72
+		  },
+		  "state_key": "@nheko_test:matrix.org",
+		  "content": {
+			"membership": "join",
+			"avatar_url": "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa",
+			"displayname": "NhekoTest"
+		  },
+		  "membership": "join",
+		  "type": "m.room.member",
+		  "room_id": "!lfoDRlNFWlvOnvkBwQ:matrix.org"
+	})",
+	  0);
 
-	TEST_ASSERT_EQUAL(aliases.type, RoomAliases);
-	TEST_ASSERT_EQUAL(aliases.event_id, "$WLGTSEFSEF:localhost");
-	TEST_ASSERT_EQUAL(aliases.room_id, "!Cuyf34gef24t:localhost");
-	TEST_ASSERT_EQUAL(aliases.sender, "@example:localhost");
-	TEST_ASSERT_EQUAL(aliases.unsigned_data.age, 242352);
-	TEST_ASSERT_EQUAL(aliases.unsigned_data.transaction_id, "txnid");
-	TEST_ASSERT_EQUAL(aliases.origin_server_ts, 1431961217939L);
-	TEST_ASSERT_EQUAL(aliases.state_key, "localhost");
-	TEST_ASSERT_EQUAL(aliases.content.aliases.size(), 2);
-	TEST_ASSERT_EQUAL(aliases.content.aliases[0], "#somewhere:localhost");
-	TEST_ASSERT_EQUAL(aliases.content.aliases[1], "#another:localhost");
+	struct matrix_sync_event sevent;
+
+	TEST_ASSERT_EQUAL(0, matrix_event_sync_parse(&sevent, jevent));
+
+	TEST_ASSERT_EQUAL(sevent.state.type, MATRIX_ROOM_MEMBER);
+	TEST_ASSERT_FALSE(sevent.state.is_in_timeline);
+
+	TEST_ASSERT_EQUAL_STRING(
+	  sevent.state.base.event_id, "$15104731322646264oUPqj:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(
+	  sevent.state.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(sevent.state.base.origin_server_ts, 1510473132947L);
+	TEST_ASSERT_EQUAL_STRING(
+	  sevent.state.base.state_key, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(sevent.state.content.member.membership, "join");
+	TEST_ASSERT_EQUAL_STRING(
+	  sevent.state.content.member.displayname, "NhekoTest");
+	TEST_ASSERT_EQUAL_STRING(sevent.state.content.member.avatar_url,
+	  "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa");
+
+	matrix_json_delete(jevent);
+
+	jevent = matrix_json_parse(R"({
+		  "prev_content": {
+			"membership": "join",
+			"avatar_url": "mxc://matrix.org/IvqcnGakfvwwKeZxbJWhblFp",
+			"displayname": "NhekoTest"
+		  },
+		  "origin_server_ts": 1509214100884,
+		  "sender": "@nheko_test:matrix.org",
+		  "event_id": "$15092141005099019aHvYG:matrix.org",
+		  "age": 1259000688,
+		  "unsigned": {
+			"prev_content": {
+			  "membership": "join",
+			  "avatar_url": "mxc://matrix.org/IvqcnGakfvwwKeZxbJWhblFp",
+			  "displayname": "NhekoTest"
+			},
+			"prev_sender": "@nheko_test:matrix.org",
+			"replaces_state": "$15092124385075888YpYOh:matrix.org",
+			"age": 1259000688
+		  },
+		  "state_key": "@nheko_test:matrix.org",
+		  "content": {
+			"membership": "join",
+			"avatar_url": "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa",
+			"displayname": "NhekoTest"
+		  },
+		  "membership": "join",
+		  "room_id": "!VaMCVKSVcyPtXbcMXh:matrix.org",
+		  "user_id": "@nheko_test:matrix.org",
+		  "replaces_state": "$15092124385075888YpYOh:matrix.org",
+		  "type": "m.room.member"
+		})",
+	  0);
+
+	struct matrix_state_event event;
+
+	TEST_ASSERT_EQUAL(0, matrix_event_state_parse(&event, jevent));
+	TEST_ASSERT_EQUAL(event.type, MATRIX_ROOM_MEMBER);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.base.event_id, "$15092141005099019aHvYG:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.sender, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL(event.base.origin_server_ts, 1509214100884L);
+	TEST_ASSERT_EQUAL_STRING(
+	  event.replaces_state, "$15092124385075888YpYOh:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.base.state_key, "@nheko_test:matrix.org");
+	TEST_ASSERT_EQUAL_STRING(event.content.member.membership, "join");
+	TEST_ASSERT_EQUAL_STRING(event.content.member.displayname, "NhekoTest");
+	TEST_ASSERT_EQUAL_STRING(event.content.member.avatar_url,
+	  "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa");
+	TEST_ASSERT_EQUAL_STRING(
+	  event.prev_content.member.displayname, "NhekoTest");
+	TEST_ASSERT_EQUAL_STRING(event.prev_content.member.avatar_url,
+	  "mxc://matrix.org/IvqcnGakfvwwKeZxbJWhblFp");
+
+	matrix_json_delete(jevent);
 }
 
+static void test_power_levels(void) {}
+
+static void test_canonical_alias(void) {}
+
+static void test_create(void) {}
+
+static void test_join_rules(void) {}
+
+static void test_name(void) {}
+
+static void test_topic(void) {}
+
+static void test_avatar(void) {}
+
+static void test_space_child(void) {}
+
+static void test_space_parent(void) {}
+
+static void test_unknown(void) {}
+
+int
+main(void) {
+	UNITY_BEGIN();
+	RUN_TEST(test_message);
+	RUN_TEST(test_redaction);
+	RUN_TEST(test_attachment);
+	RUN_TEST(test_member);
+	RUN_TEST(test_power_levels);
+	RUN_TEST(test_canonical_alias);
+	RUN_TEST(test_create);
+	RUN_TEST(test_join_rules);
+	RUN_TEST(test_name);
+	RUN_TEST(test_topic);
+	RUN_TEST(test_avatar);
+	RUN_TEST(test_space_child);
+	RUN_TEST(test_space_parent);
+	RUN_TEST(test_unknown);
+	return UNITY_END();
+}
+
+/*
 TEST(StateEvents, Avatar)
 {
 	json data = R"({
@@ -525,91 +596,6 @@ mtx::events::state::JoinAllowanceType::RoomMembership);
 	ASSERT_EQ(event2.content.allow[1].type,
 mtx::events::state::JoinAllowanceType::RoomMembership);
 	ASSERT_EQ(event2.content.allow[1].room_id, "!users:example.org");
-}
-
-TEST(StateEvents, Member)
-{
-	json data = R"({
-		  "origin_server_ts": 1510473132947,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15104731322646264oUPqj:matrix.org",
-		  "unsigned": {
-			"age": 72
-		  },
-		  "state_key": "@nheko_test:matrix.org",
-		  "content": {
-			"membership": "join",
-			"avatar_url": "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa",
-			"displayname": "NhekoTest"
-		  },
-		  "membership": "join",
-		  "type": "m.room.member",
-		  "room_id": "!lfoDRlNFWlvOnvkBwQ:matrix.org"
-	})"_json;
-
-	ns::StateEvent<ns::state::Member> event = data;
-
-	TEST_ASSERT_EQUAL(event.type, RoomMember);
-	TEST_ASSERT_EQUAL(event.event_id, "$15104731322646264oUPqj:matrix.org");
-	TEST_ASSERT_EQUAL(event.room_id, "!lfoDRlNFWlvOnvkBwQ:matrix.org");
-	TEST_ASSERT_EQUAL(event.sender, "@nheko_test:matrix.org");
-	TEST_ASSERT_EQUAL(event.origin_server_ts, 1510473132947L);
-	TEST_ASSERT_EQUAL(event.unsigned_data.age, 72);
-	TEST_ASSERT_EQUAL(event.state_key, "@nheko_test:matrix.org");
-	TEST_ASSERT_EQUAL(event.content.membership, ns::state::Membership::Join);
-	TEST_ASSERT_EQUAL(event.content.display_name, "NhekoTest");
-	TEST_ASSERT_EQUAL(event.content.avatar_url,
-"mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa");
-
-	json data2 = R"({
-		  "prev_content": {
-			"membership": "join",
-			"avatar_url": "mxc://matrix.org/IvqcnGakfvwwKeZxbJWhblFp",
-			"displayname": "NhekoTest"
-		  },
-		  "origin_server_ts": 1509214100884,
-		  "sender": "@nheko_test:matrix.org",
-		  "event_id": "$15092141005099019aHvYG:matrix.org",
-		  "age": 1259000688,
-		  "unsigned": {
-			"prev_content": {
-			  "membership": "join",
-			  "avatar_url": "mxc://matrix.org/IvqcnGakfvwwKeZxbJWhblFp",
-			  "displayname": "NhekoTest"
-			},
-			"prev_sender": "@nheko_test:matrix.org",
-			"replaces_state": "$15092124385075888YpYOh:matrix.org",
-			"age": 1259000688
-		  },
-		  "state_key": "@nheko_test:matrix.org",
-		  "content": {
-			"membership": "join",
-			"avatar_url": "mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa",
-			"displayname": "NhekoTest"
-		  },
-		  "membership": "join",
-		  "room_id": "!VaMCVKSVcyPtXbcMXh:matrix.org",
-		  "user_id": "@nheko_test:matrix.org",
-		  "replaces_state": "$15092124385075888YpYOh:matrix.org",
-		  "type": "m.room.member"
-		})"_json;
-
-	ns::StateEvent<ns::state::Member> event2 = data2;
-
-	TEST_ASSERT_EQUAL(event2.type, RoomMember);
-	TEST_ASSERT_EQUAL(event2.event_id, "$15092141005099019aHvYG:matrix.org");
-	TEST_ASSERT_EQUAL(event2.room_id, "!VaMCVKSVcyPtXbcMXh:matrix.org");
-	TEST_ASSERT_EQUAL(event2.sender, "@nheko_test:matrix.org");
-	TEST_ASSERT_EQUAL(event2.origin_server_ts, 1509214100884L);
-	TEST_ASSERT_EQUAL(event2.unsigned_data.replaces_state,
-"$15092124385075888YpYOh:matrix.org");
-	TEST_ASSERT_EQUAL(event2.unsigned_data.age, 1259000688);
-	TEST_ASSERT_EQUAL(event2.unsigned_data.age, 1259000688);
-	TEST_ASSERT_EQUAL(event2.state_key, "@nheko_test:matrix.org");
-	TEST_ASSERT_EQUAL(event2.content.membership, ns::state::Membership::Join);
-	TEST_ASSERT_EQUAL(event2.content.display_name, "NhekoTest");
-	TEST_ASSERT_EQUAL(event2.content.avatar_url,
-"mxc://matrix.org/JKiSOBDDxCHxmaLAgoQwSAHa");
 }
 
 TEST(StateEvents, Name)

@@ -230,7 +230,7 @@ struct matrix_state_event {
 	/* Whether the member in prev_content is valid. */
 	bool prev_content_is_valid;
 	enum matrix_state_type type;
-	char *state_key;
+	char *replaces_state; /* nullable (ID of replaced event) */
 	struct matrix_state_base base;
 	union matrix_state_event_content content;
 	union matrix_state_event_content prev_content;

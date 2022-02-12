@@ -325,10 +325,12 @@ matrix_event_state_parse(
 		return -1;
 	}
 
+	memset(revent, 0, sizeof(*revent));
+
 	bool is_valid = true;
-	revent->state_key = GETSTR(event, "state_key");
 
 	revent->base = (struct matrix_state_base) {
+	  .state_key = GETSTR(event, "state_key"),
 	  .origin_server_ts = get_uint64(event, "origin_server_ts", 0),
 	  .event_id = GETSTR(event, "event_id"),
 	  .sender = GETSTR(event, "sender"),
@@ -336,18 +338,20 @@ matrix_event_state_parse(
 	};
 
 	cJSON *content = cJSON_GetObjectItem(event, "content");
-	cJSON *prev_content = cJSON_GetObjectItem(
-	  cJSON_GetObjectItem(event, "unsigned"), "prev_content");
+	cJSON *unsigned_obj = cJSON_GetObjectItem(event, "unsigned");
+	cJSON *prev_content = cJSON_GetObjectItem(unsigned_obj, "prev_content");
 
 	if (!prev_content) {
 		prev_content = cJSON_GetObjectItem(event, "prev_content");
 	}
 
-	if (!revent->state_key || !content || !revent->base.origin_server_ts
+	if (!content || !revent->base.state_key || !revent->base.origin_server_ts
 		|| !revent->base.event_id || !revent->base.sender
 		|| !revent->base.type) {
 		return -1;
 	}
+
+	revent->replaces_state = GETSTR(unsigned_obj, "replaces_state");
 
 	/* Set the .content and .prev_content for a given state type. */
 #define SET_STATE(state_member)                                                \
@@ -364,11 +368,11 @@ matrix_event_state_parse(
 #define SET_STATE_WITH_KEY(state_member)                                       \
 	do {                                                                       \
 		is_valid = parse_state_##state_member(                                 \
-		  &revent->content.state_member, content, revent->state_key);          \
+		  &revent->content.state_member, content, revent->base.state_key);     \
 		revent->prev_content_is_valid                                          \
 		  = (prev_content                                                      \
 			 && parse_state_##state_member(&revent->prev_content.state_member, \
-			   prev_content, revent->state_key));                              \
+			   prev_content, revent->base.state_key));                         \
 	} while (0)
 
 	if (TYPE(MATRIX_ROOM_MEMBER, "m.room.member")) {
@@ -414,6 +418,8 @@ matrix_event_timeline_parse(
 	if (!revent || !event || (GETSTR(event, "state_key"))) {
 		return -1;
 	}
+
+	memset(revent, 0, sizeof(*revent));
 
 	bool is_valid = false;
 
@@ -508,6 +514,8 @@ matrix_event_ephemeral_parse(
 	if (!revent || !event) {
 		return -1;
 	}
+
+	memset(revent, 0, sizeof(*revent));
 
 	bool is_valid = false;
 
