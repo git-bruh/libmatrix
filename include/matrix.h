@@ -142,8 +142,8 @@ struct matrix_room_redaction {
 struct matrix_room_attachment {
 	char *body;
 	char *msgtype;
-	char *url; /* nullable. */
-	char *filename;
+	char *url;
+	char *filename; /* nullable. */
 	struct matrix_file_info info;
 };
 
@@ -229,6 +229,20 @@ struct matrix_state_event {
 	union matrix_state_event_content prev_content;
 };
 
+struct matrix_event_relation {
+	enum matrix_rel_type {
+		MATRIX_RELATION_UNKNOWN = 0,
+		MATRIX_RELATION_ANNOTATION,
+		MATRIX_RELATION_IN_REPLY_TO,
+		MATRIX_RELATION_REPLACE,
+	} rel_type;
+	char *rel_type_str; /* nullable */
+	char *event_id;		/* nullable */
+	char *key;			/* nullable (Annotation key) */
+	matrix_json_t
+	  *new_content; /* nullable, the event struct can be passed to () */
+};
+
 struct matrix_timeline_event {
 	enum matrix_timeline_type {
 		MATRIX_ROOM_MESSAGE = 1 << 1,
@@ -236,6 +250,7 @@ struct matrix_timeline_event {
 		MATRIX_ROOM_ATTACHMENT = 1 << 3,
 	} type;
 	struct matrix_room_base base;
+	struct matrix_event_relation relation;
 	union {
 		struct matrix_room_message message;
 		struct matrix_room_redaction redaction;

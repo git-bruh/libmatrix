@@ -410,7 +410,8 @@ matrix_event_state_parse(
 int
 matrix_event_timeline_parse(
   struct matrix_timeline_event *revent, const matrix_json_t *event) {
-	if (!revent || !event) {
+	/* Timeline event must not have a state_key. */
+	if (!revent || !event || (GETSTR(event, "state_key"))) {
 		return -1;
 	}
 
@@ -429,6 +430,33 @@ matrix_event_timeline_parse(
 		|| !revent->base.sender || !revent->base.type
 		|| !(content = cJSON_GetObjectItem(event, "content"))) {
 		return -1;
+	}
+
+	{
+		cJSON *relates_to = cJSON_GetObjectItem(content, "m.relates_to");
+		cJSON *in_reply_to = cJSON_GetObjectItem(relates_to, "m.in_reply_to");
+		char *event_id = GETSTR(relates_to, "event_id");
+
+		enum matrix_rel_type rel_type = MATRIX_RELATION_UNKNOWN;
+		char *rel_type_str = GETSTR(relates_to, "rel_type");
+
+		/* "m.in_reply_to" is a nested json object. */
+		if (in_reply_to) {
+			rel_type = MATRIX_RELATION_IN_REPLY_TO;
+			event_id = GETSTR(in_reply_to, "event_id");
+		} else if (rel_type_str) {
+			if ((STREQ(rel_type_str, "m.annotation"))) {
+				rel_type = MATRIX_RELATION_ANNOTATION;
+			} else if ((STREQ(rel_type_str, "m.replace"))) {
+				rel_type = MATRIX_RELATION_REPLACE;
+			}
+		}
+
+		revent->relation = (struct matrix_event_relation) {.rel_type = rel_type,
+		  .rel_type_str = rel_type_str,
+		  .event_id = event_id,
+		  .key = GETSTR(relates_to, "key"),
+		  .new_content = cJSON_GetObjectItem(content, "new_content")};
 	}
 
 	if (TYPE(MATRIX_ROOM_MESSAGE, "m.room.message")) {
