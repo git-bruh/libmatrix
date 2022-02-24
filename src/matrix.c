@@ -155,7 +155,8 @@ matrix_json_has_content(const matrix_json_t *json) {
 
 int
 matrix_json_clear_content(matrix_json_t *json) {
-	if ((matrix_json_has_content(json)) == 0) {
+	if ((matrix_json_has_content(json))) {
+		cJSON_DeleteItemFromObject(json, "content");
 		/* Add empty {} */
 		return ((cJSON_AddObjectToObject(json, "content")) ? 0 : -1);
 	}
