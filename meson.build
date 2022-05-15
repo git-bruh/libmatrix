@@ -17,9 +17,6 @@ tests = ['test_parsing']
 
 c_args = [
     '-D_GNU_SOURCE',
-    '-D_FORTIFY_SOURCE=2',
-    '-fstack-protector-strong',
-    '--param=ssp-buffer-size=4',
 ]
 
 warning_c_args = [
