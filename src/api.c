@@ -296,7 +296,7 @@ response_restart(struct response *response) {
 }
 
 static uint64_t
-ms_since_epoch() {
+ms_since_epoch(void) {
 	struct timespec time = {0};
 	clock_gettime(CLOCK_REALTIME, &time);
 
